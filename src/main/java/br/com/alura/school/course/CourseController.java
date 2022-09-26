@@ -7,6 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -22,7 +23,9 @@ class CourseController {
 
     @GetMapping("/courses")
     ResponseEntity<List<CourseResponse>> allCourses() {
-        return ResponseEntity.ok().build();
+        List<Course> courseList = courseRepository.findAll();
+        List<CourseResponse> courseResponse = courseList.stream().map(CourseResponse::new).collect(Collectors.toList());
+        return ResponseEntity.ok(courseResponse);
     }
 
     @GetMapping("/courses/{code}")
@@ -33,6 +36,13 @@ class CourseController {
 
     @PostMapping("/courses")
     ResponseEntity<Void> newCourse(@RequestBody @Valid NewCourseRequest newCourseRequest) {
+        courseRepository.save(newCourseRequest.toEntity());
+        URI location = URI.create(format("/courses/%s", newCourseRequest.getCode()));
+        return ResponseEntity.created(location).build();
+    }
+
+    @PostMapping("/courses/{code}/sections")
+    ResponseEntity<Void> newSection(@PathVariable("code") String code, @RequestBody @Valid NewCourseRequest newCourseRequest) {
         courseRepository.save(newCourseRequest.toEntity());
         URI location = URI.create(format("/courses/%s", newCourseRequest.getCode()));
         return ResponseEntity.created(location).build();
